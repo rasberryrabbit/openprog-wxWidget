@@ -1,0 +1,129 @@
+#ifndef _COMMON_DECLARATIONS
+#define _COMMON_DECLARATIONS
+//#define DEBUG
+#define _APPNAME "OPGUI"
+/* wxWidgets 포팅 - GTK 대신 GUI shim 사용 */
+#define _WXGUI
+
+#if !defined _WIN32 && !defined __CYGWIN__
+//linux:
+        #include <sys/ioctl.h>
+        #include <sys/types.h>
+        #include <sys/stat.h>
+        #include <asm/types.h>
+        #include <fcntl.h>
+        #include <linux/hiddev.h>
+        #include <linux/hidraw.h>
+        #include <linux/input.h>
+        #include <sys/timeb.h>
+        #include <stdint.h>
+        #include <errno.h>
+#else
+//windows
+        #include <windows.h>
+        #include <setupapi.h>
+        #include <hidusage.h>
+        #include <hidpi.h>
+        #include <math.h>
+        #include <sys/timeb.h>
+        #include <wchar.h>
+#endif
+
+/* GTK 대신 GUI shim 사용 */
+#include "gui_shim.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <string.h>
+#include "strings.h"
+#include "instructions.h"
+
+typedef unsigned long DWORD;
+typedef unsigned short WORD;
+typedef unsigned char BYTE;
+
+//to use the same code of windows version
+#define PrintMessage1(s,p)                              {sprintf(str,s,p); PrintMessage(str);}
+#define PrintMessage2(s,p1,p2)                  {sprintf(str,s,p1,p2); PrintMessage(str);}
+#define PrintMessage3(s,p1,p2,p3)               {sprintf(str,s,p1,p2,p3); PrintMessage(str);}
+#define PrintMessage4(s,p1,p2,p3,p4)    {sprintf(str,s,p1,p2,p3,p4); PrintMessage(str);}
+#define PrintStatus(s,p1,p2)                    {sprintf(str,s,p1,p2); gtk_statusbar_push(GTK_STATUSBAR(status_bar),statusID,str);while (gtk_events_pending ()) gtk_main_iteration();}
+#define PrintStatusSetup() //only needed for console version
+#define PrintStatusEnd() //only needed for console version
+#define PrintStatusClear() gtk_statusbar_push(GTK_STATUSBAR(status_bar),statusID,"");
+
+#define COL 16
+//Version defined in makefile
+#if !defined VERSION
+  #define VERSION "unknown"
+#endif
+#define G (12.0/34*1024/5)              //=72,2823529412
+#define LOCK    1
+#define FUSE    2
+#define FUSE_H  4
+#define FUSE_X  8
+#define CAL     16
+#define SLOW    256
+
+#if !defined _WIN32 && !defined __CYGWIN__              //Linux
+        #define SYSNAME "Linux"
+        #define DIMBUF 64
+        DWORD GetTickCount();
+        extern unsigned char bufferU[128],bufferI[128];
+#else   //Windows
+        #define SYSNAME "Windows"
+        #define DIMBUF 64
+        extern unsigned char bufferU0[128],bufferI0[128];
+        extern unsigned char *bufferU,*bufferI;
+        extern DWORD NumberOfBytesRead,BytesWritten;
+        extern ULONG Result;
+        extern HANDLE WriteHandle,ReadHandle;
+        extern OVERLAPPED HIDOverlapped;
+        extern HANDLE hEventObject;
+#endif
+
+extern int statusID;
+extern GtkWidget *status_bar;
+extern char str[4096];
+extern int saveLog;
+extern char** strings;
+extern int fd;
+extern int saveLog,programID,MinDly,load_osccal,load_BKosccal;
+extern int use_osccal,use_BKosccal;
+extern int load_calibword,max_err;
+extern int AVRlock,AVRfuse,AVRfuse_h,AVRfuse_x;
+extern int ICDenable,ICDaddr;
+extern int FWVersion,HwID;
+extern FILE* logfile;
+extern char LogFileName[512];
+extern char loadfile[512],savefile[512];
+extern WORD *memCODE_W;
+extern int size,sizeW,sizeEE,sizeCONFIG,sizeUSERID;
+extern unsigned char *memCODE,*memEE,memID[512],memCONFIG[48],memUSERID[8];
+extern double hvreg;
+extern int RWstop;
+extern int useSAFLOCK_flag;
+/* 추가 전역 변수들 - hw_io.c에 정의, opgui_wx.cpp 에서 사용 */
+extern int skipV33check;
+extern int waitS1, waitingS1;
+extern int ee;
+extern int readRes;
+extern int progress;
+extern int devType;
+extern int forceConfig;
+
+int StartHVReg(double V);
+void msDelay(double delay);
+void DisplayEE();
+void PrintMessage(const char *msg);
+void PrintMessageI2C(const char *msg);
+int CheckV33Regulator(void);
+void OpenLogFile(void);
+void WriteLogIO();
+void CloseLogFile();
+unsigned int htoi(const char *hex, int length);
+void PacketIO(double delay);
+#endif
